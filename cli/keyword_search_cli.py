@@ -2,8 +2,21 @@
 
 import argparse
 import json
+import string
 
 from pathlib import Path
+
+def sanitise_text(text: str) -> str:
+    text = text.lower()
+    
+    np = ""
+    for char in text:
+        if char not in string.punctuation:
+            np += char
+
+    text = np
+
+    return text
 
 def search(query: str) -> list[dict]:
     movie_path = "data/movies.json"
@@ -14,7 +27,12 @@ def search(query: str) -> list[dict]:
     matched = []
 
     for movie in movie_data["movies"]:
-        if query.lower() in movie["title"].lower():
+        title = movie["title"]
+
+        query = sanitise_text(query)
+        title = sanitise_text(title)
+
+        if query in title:
             matched.append(movie)
 
     return matched
