@@ -5,6 +5,7 @@ import json
 import string
 
 from pathlib import Path
+from nltk.stem import PorterStemmer
 
 def get_stopwords() -> list[str]: 
     stopwords_path = Path("data/stopwords.txt")
@@ -41,6 +42,12 @@ def sanitise_text(text: str, stopwords: list[str]) -> list[str]:
         if token != " " and token not in stopwords:
             nw.append(token)
     text = nw
+
+    stemmer = PorterStemmer()
+    st = []
+    for token in text:
+        st.append(stemmer.stem(token))
+    text = st
 
     return text
 
