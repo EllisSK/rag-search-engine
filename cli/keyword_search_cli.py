@@ -14,7 +14,7 @@ def search(query: str) -> list[dict]:
     matched = []
 
     for movie in movie_data["movies"]:
-        if query in movie["title"]:
+        if query.lower() in movie["title"].lower():
             matched.append(movie)
 
     return matched
