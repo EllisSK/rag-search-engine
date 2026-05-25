@@ -6,7 +6,7 @@ import string
 
 from pathlib import Path
 
-def sanitise_text(text: str) -> str:
+def sanitise_text(text: str) -> list[str]:
     text = text.lower()
     
     np = ""
@@ -16,6 +16,13 @@ def sanitise_text(text: str) -> str:
 
     text = np
 
+    text = text.split(" ")
+    nw = []
+    for token in text:
+        if token != " ":
+            nw.append(token)
+    text = nw
+
     return text
 
 def search(query: str) -> list[dict]:
@@ -24,16 +31,20 @@ def search(query: str) -> list[dict]:
     with open(movie_path, "r") as f:
         movie_data = json.load(f)
 
+    query = sanitise_text(query)
     matched = []
 
     for movie in movie_data["movies"]:
         title = movie["title"]
 
-        query = sanitise_text(query)
         title = sanitise_text(title)
 
-        if query in title:
-            matched.append(movie)
+        for title_token in title:
+            for query_token in query:
+                if query_token in title_token:
+                    if movie not in matched:
+                        matched.append(movie)
+
 
     return matched
 
