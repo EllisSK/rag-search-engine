@@ -6,7 +6,26 @@ import string
 
 from pathlib import Path
 
-def sanitise_text(text: str) -> list[str]:
+def get_stopwords() -> list[str]: 
+    stopwords_path = Path("data/stopwords.txt")
+    
+    with open(stopwords_path, "r") as f:
+        stopwords = f.read()
+    
+    stopwords = stopwords.splitlines()
+
+    nop = []
+    for word in stopwords:
+        np = ""
+        for char in word:
+            if char not in string.punctuation:
+                np += char
+        nop.append(np)
+    stopwords = nop
+
+    return stopwords
+
+def sanitise_text(text: str, stopwords: list[str]) -> list[str]:
     text = text.lower()
     
     np = ""
@@ -19,7 +38,7 @@ def sanitise_text(text: str) -> list[str]:
     text = text.split(" ")
     nw = []
     for token in text:
-        if token != " ":
+        if token != " " and token not in stopwords:
             nw.append(token)
     text = nw
 
@@ -31,13 +50,15 @@ def search(query: str) -> list[dict]:
     with open(movie_path, "r") as f:
         movie_data = json.load(f)
 
-    query = sanitise_text(query)
+    stopwords = get_stopwords()
+
+    query = sanitise_text(query, stopwords)
     matched = []
 
     for movie in movie_data["movies"]:
         title = movie["title"]
 
-        title = sanitise_text(title)
+        title = sanitise_text(title, stopwords)
 
         for title_token in title:
             for query_token in query:
