@@ -15,9 +15,12 @@ class InvertedIndex:
         self.docmap: dict[int, dict] = {}
         self.term_frequencies: dict[int, Counter] = {}
         self.stopwords = get_stopwords()
+        self.doc_lengths: dict[int, int] = {}
 
     def __add_document(self, doc_id: int, text: str):
         tokenised_text = sanitise_text(text, self.stopwords)
+
+        self.doc_lengths[doc_id] = len(tokenised_text)
 
         if doc_id not in self.term_frequencies.keys():
             self.term_frequencies[doc_id] = Counter()
@@ -32,7 +35,7 @@ class InvertedIndex:
             else:
                 self.term_frequencies[doc_id][token] = 1
 
-    def get_documents(self, term: str) -> list[str]:
+    def get_documents(self, term: str) -> list[int]:
         term = term.lower()
         
         if term in self.index.keys():
@@ -58,6 +61,7 @@ class InvertedIndex:
         index_cache_path = Path("cache/index.pkl")
         docmap_cache_path = Path("cache/docmap.pkl")
         term_freq_cache_path = Path("cache/term_frequencies.pkl")
+        doc_lengths_path = Path("cache/doc_lengths.pkl")
 
         index_cache_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -70,10 +74,14 @@ class InvertedIndex:
         with open(term_freq_cache_path, "wb") as f:
             pickle.dump(self.term_frequencies, f)
 
+        with open(doc_lengths_path, "wb") as f:
+            pickle.dump(self.doc_lengths, f)
+
     def load(self):
         index_cache_path = Path("cache/index.pkl")
         docmap_cache_path = Path("cache/docmap.pkl")
         term_freq_cache_path = Path("cache/term_frequencies.pkl")
+        doc_lengths_path = Path("cache/doc_lengths.pkl")
 
         try:
             with open(index_cache_path, "rb") as f:
@@ -84,6 +92,9 @@ class InvertedIndex:
 
             with open(term_freq_cache_path, "rb") as f:
                 self.term_frequencies = pickle.load(f)
+
+            with open(doc_lengths_path, "rb") as f:
+                self.doc_lengths = pickle.load(f)
         except Exception as e:
             raise Exception(f"Failed to load index from cache: {e}")
 
@@ -106,9 +117,22 @@ class InvertedIndex:
 
         return IDF
 
-    def get_bm25_tf(self, doc_id: int, term: str, k1: float) -> int:
-        
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float, b: float) -> float:
+        doc_length = self.doc_lengths[doc_id]
+        avg_doc_length = self.__get_avg_doc_length()
+
+        length_norm = 1 - b + b * (doc_length / avg_doc_length)
+
         tf = self.get_tf(doc_id, term)
-        bm25_tf = (tf * (k1 + 1)) / (tf + k1)
+        bm25_tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
 
         return bm25_tf
+    
+    def __get_avg_doc_length(self) -> float:
+        n = len(self.doc_lengths.keys())
+        s = sum(self.doc_lengths.values())
+
+        if n > 0:
+            return s / n
+        else:
+            return 0.0
