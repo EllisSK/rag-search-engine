@@ -26,6 +26,10 @@ def main() -> None:
     idf_parser = subparsers.add_parser("idf", help="Get the inverse document frequency of a term")
     idf_parser.add_argument("term", type=str, help="Token term")
 
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get the tfidf of a term")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tfidf_parser.add_argument("term", type=str, help="Token term")
+
     args = parser.parse_args()
 
     match args.command:
@@ -91,6 +95,23 @@ def main() -> None:
             idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
 
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+
+        case "tfidf":
+            term = sanitise_term(args.term)
+
+            index = InvertedIndex()
+            index.load()
+
+            tf = index.get_tf(args.doc_id, term)
+
+            total_doc_count = len(index.docmap)
+            term_match_doc_count = len(index.get_documents(term))
+
+            idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+
+            tfidf = tf * idf
+
+            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tfidf:.2f}")
         
         case _:
             parser.print_help()
