@@ -5,51 +5,9 @@ import json
 import string
 
 from pathlib import Path
-from nltk.stem import PorterStemmer
 
-def get_stopwords() -> list[str]: 
-    stopwords_path = Path("data/stopwords.txt")
-    
-    with open(stopwords_path, "r") as f:
-        stopwords = f.read()
-    
-    stopwords = stopwords.splitlines()
-
-    nop = []
-    for word in stopwords:
-        np = ""
-        for char in word:
-            if char not in string.punctuation:
-                np += char
-        nop.append(np)
-    stopwords = nop
-
-    return stopwords
-
-def sanitise_text(text: str, stopwords: list[str]) -> list[str]:
-    text = text.lower()
-    
-    np = ""
-    for char in text:
-        if char not in string.punctuation:
-            np += char
-
-    text = np
-
-    text = text.split(" ")
-    nw = []
-    for token in text:
-        if token != " " and token not in stopwords:
-            nw.append(token)
-    text = nw
-
-    stemmer = PorterStemmer()
-    st = []
-    for token in text:
-        st.append(stemmer.stem(token))
-    text = st
-
-    return text
+from tokenise import sanitise_text, get_stopwords
+from index import InvertedIndex
 
 def search(query: str) -> list[dict]:
     movie_path = "data/movies.json"
@@ -83,6 +41,8 @@ def main() -> None:
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
 
+    build_parser = subparsers.add_parser("build", help="Build the inverted index and save it to disk")
+
     args = parser.parse_args()
 
     match args.command:
@@ -99,6 +59,13 @@ def main() -> None:
                         break
             else:
                 print("No results found")
+        case "build":
+            index = InvertedIndex()
+            index.build()
+            index.save()
+
+            docs = index.get_documents("merida")
+            print(f"First document for token 'merida' = {docs[0]}")
         case _:
             parser.print_help()
 
