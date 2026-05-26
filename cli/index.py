@@ -52,3 +52,17 @@ class InvertedIndex:
         
         with open(docmap_cache_path, "wb") as f:
             pickle.dump(self.docmap, f)
+
+    def load(self):
+        index_cache_path = Path("cache/index.pkl")
+        docmap_cache_path = Path("cache/docmap.pkl")
+
+        try:
+            with open(index_cache_path, "rb") as f:
+                self.index = pickle.load(f)
+            
+            with open(docmap_cache_path, "rb") as f:
+                self.docmap = pickle.load(f)
+        except Exception as e:
+            raise Exception(f"Failed to load index from cache: {e}")
+
