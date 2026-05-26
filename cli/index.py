@@ -10,7 +10,7 @@ from tokenise import sanitise_text, get_stopwords
 class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
-        self.docmap: dict[int, Path] = {}
+        self.docmap: dict[int, dict] = {}
         self.term_frequencies: dict[int, Counter] = {}
         self.stopwords = get_stopwords()
 
@@ -30,7 +30,7 @@ class InvertedIndex:
             else:
                 self.term_frequencies[doc_id][token] = 1
 
-    def get_documents(self, term: str):
+    def get_documents(self, term: str) -> list[str]:
         term = term.lower()
         
         if term in self.index.keys():
