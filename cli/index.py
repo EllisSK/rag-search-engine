@@ -136,3 +136,29 @@ class InvertedIndex:
             return s / n
         else:
             return 0.0
+        
+    def bm25(self, doc_id: int, term: str, k1: float, b: float) -> float:
+        idf = self.get_bm25_idf(term)
+        tf = self.get_bm25_tf(doc_id, term, k1, b)
+
+        return idf * tf
+
+    def bm25_search(self, query: str, limit: int, k1: float, b: float):
+        tokens = sanitise_text(query, self.stopwords)
+
+        scores_dict = {}
+
+        for doc_id in self.docmap.keys():
+            doc_total = 0.0
+            for token in tokens:
+                bm25 = self.bm25(doc_id, token, k1, b)
+                doc_total += bm25
+            scores_dict[doc_id] = doc_total
+
+        sorted_results = sorted(scores_dict.items(), key=lambda item: item[1], reverse=True)
+        
+        limited_results = sorted_results[:limit]
+
+        return limited_results
+
+
