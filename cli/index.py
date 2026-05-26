@@ -1,7 +1,9 @@
 import pickle
 import json
 
-from pathlib import Path, PosixPath
+from pathlib import Path
+from collections import Counter
+from tqdm import tqdm
 
 from tokenise import sanitise_text, get_stopwords
 
@@ -9,15 +11,24 @@ class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, Path] = {}
+        self.term_frequencies: dict[int, Counter] = {}
         self.stopwords = get_stopwords()
 
     def __add_document(self, doc_id: int, text: str):
         tokenised_text = sanitise_text(text, self.stopwords)
+
+        if doc_id not in self.term_frequencies.keys():
+            self.term_frequencies[doc_id] = Counter()
+
         for token in tokenised_text:
             if token in self.index.keys():
                 self.index[token].add(doc_id)
             else:
                 self.index[token] = {doc_id}
+            if token in self.term_frequencies[doc_id].keys():
+                self.term_frequencies[doc_id][token] += 1
+            else:
+                self.term_frequencies[doc_id][token] = 1
 
     def get_documents(self, term: str):
         term = term.lower()
@@ -36,7 +47,7 @@ class InvertedIndex:
         with open(movie_path, "r") as f:
             movie_data = json.load(f)
 
-        for movie in movie_data["movies"]:
+        for movie in tqdm(movie_data["movies"]):
             doc_id = movie["id"]
             self.docmap[doc_id] = movie
             self.__add_document(doc_id, f"{movie['title']} {movie['description']}")
@@ -44,6 +55,7 @@ class InvertedIndex:
     def save(self):
         index_cache_path = Path("cache/index.pkl")
         docmap_cache_path = Path("cache/docmap.pkl")
+        term_freq_cache_path = Path("cache/term_frequencies.pkl")
 
         index_cache_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -53,9 +65,13 @@ class InvertedIndex:
         with open(docmap_cache_path, "wb") as f:
             pickle.dump(self.docmap, f)
 
+        with open(term_freq_cache_path, "wb") as f:
+            pickle.dump(self.term_frequencies, f)
+
     def load(self):
         index_cache_path = Path("cache/index.pkl")
         docmap_cache_path = Path("cache/docmap.pkl")
+        term_freq_cache_path = Path("cache/term_frequencies.pkl")
 
         try:
             with open(index_cache_path, "rb") as f:
@@ -63,6 +79,17 @@ class InvertedIndex:
             
             with open(docmap_cache_path, "rb") as f:
                 self.docmap = pickle.load(f)
+
+            with open(term_freq_cache_path, "rb") as f:
+                self.term_frequencies = pickle.load(f)
         except Exception as e:
             raise Exception(f"Failed to load index from cache: {e}")
 
+    def get_tf(self, doc_id: int, term: str) -> int:
+        if doc_id not in self.term_frequencies.keys():
+            raise ValueError("Invalid doc id")
+
+        if term in self.term_frequencies[doc_id].keys():
+            return self.term_frequencies[doc_id][term]
+        else:
+            return 0

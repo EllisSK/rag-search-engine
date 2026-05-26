@@ -46,3 +46,14 @@ def sanitise_text(text: str, stopwords: list[str]) -> list[str]:
     text = st
 
     return text
+
+def sanitise_term(term: str) -> str:
+    stopwords = get_stopwords()
+    sanitised_term = sanitise_text(term, stopwords)
+
+    if len(sanitised_term) > 1:
+        raise ValueError("Term results in more than a single token!")
+    
+    term = sanitised_term[0]
+
+    return term

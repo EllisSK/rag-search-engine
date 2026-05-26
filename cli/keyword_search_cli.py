@@ -6,7 +6,7 @@ import string
 
 from pathlib import Path
 
-from tokenise import sanitise_text, get_stopwords
+from tokenise import sanitise_text, get_stopwords, sanitise_term
 from index import InvertedIndex
 
 def main() -> None:
@@ -17,6 +17,10 @@ def main() -> None:
     search_parser.add_argument("query", type=str, help="Search query")
 
     build_parser = subparsers.add_parser("build", help="Build the inverted index and save it to disk")
+
+    tf_parser = subparsers.add_parser("tf", help="Get the term frequency of a single token")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Token term")
 
     args = parser.parse_args()
 
@@ -55,6 +59,22 @@ def main() -> None:
             index = InvertedIndex()
             index.build()
             index.save()
+
+        case "tf":
+            term = sanitise_term(args.term)
+
+            index = InvertedIndex()
+            index.load()
+
+            freq = index.get_tf(args.doc_id, term)
+
+            if freq == 0:
+                print(0)
+            elif freq == 1:
+                print(f"{args.term} appears {freq} time in document {args.doc_id}")
+            else:
+                print(f"{args.term} appears {freq} times in document {args.doc_id}")
+        
         case _:
             parser.print_help()
 
