@@ -1,4 +1,5 @@
 import string
+import re
 
 from pathlib import Path
 from nltk.stem import PorterStemmer
@@ -24,28 +25,18 @@ def get_stopwords() -> list[str]:
 
 def sanitise_text(text: str, stopwords: list[str]) -> list[str]:
     text = text.lower()
-    
+
     np = ""
     for char in text:
         if char not in string.punctuation:
             np += char
-
     text = np
 
-    text = text.split(" ")
-    nw = []
-    for token in text:
-        if token != " " and token not in stopwords:
-            nw.append(token)
-    text = nw
+    tokens = text.split()
+    tokens = [t for t in tokens if t not in stopwords]
 
     stemmer = PorterStemmer()
-    st = []
-    for token in text:
-        st.append(stemmer.stem(token))
-    text = st
-
-    return text
+    return [stemmer.stem(t) for t in tokens]
 
 def sanitise_term(term: str) -> str:
     stopwords = get_stopwords()

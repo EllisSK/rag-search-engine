@@ -7,6 +7,7 @@ from collections import Counter
 from tqdm import tqdm
 
 from tokenise import sanitise_text, get_stopwords, sanitise_term
+from constants import BM25_K1
 
 class InvertedIndex:
     def __init__(self):
@@ -104,3 +105,10 @@ class InvertedIndex:
         IDF = math.log((N - df + 0.5) / (df + 0.5) + 1)
 
         return IDF
+
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float) -> int:
+        
+        tf = self.get_tf(doc_id, term)
+        bm25_tf = (tf * (k1 + 1)) / (tf + k1)
+
+        return bm25_tf
