@@ -1,11 +1,12 @@
 import pickle
 import json
+import math
 
 from pathlib import Path
 from collections import Counter
 from tqdm import tqdm
 
-from tokenise import sanitise_text, get_stopwords
+from tokenise import sanitise_text, get_stopwords, sanitise_term
 
 class InvertedIndex:
     def __init__(self):
@@ -93,3 +94,13 @@ class InvertedIndex:
             return self.term_frequencies[doc_id][term]
         else:
             return 0
+
+    def get_bm25_idf(self, term: str) -> float:
+        term = sanitise_term(term)
+
+        N = len(self.docmap)
+        df = len(self.get_documents(term))
+
+        IDF = math.log((N - df + 0.5) / (df + 0.5) + 1)
+
+        return IDF
