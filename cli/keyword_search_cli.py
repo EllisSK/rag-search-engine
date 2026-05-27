@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 import argparse
 import math
 
-from tokenise import sanitise_text, get_stopwords, sanitise_term
-from index import InvertedIndex
-from constants import BM25_K1, BM25_B
+from search_core.tokenise import sanitise_text, get_stopwords, sanitise_term
+from search_core.index import InvertedIndex
+from search_core.constants import BM25_K1, BM25_B
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
