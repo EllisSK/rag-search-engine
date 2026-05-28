@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import argparse
 
-from search_core.semantic_search import verify_model, embed_text
+from search_core.semantic_search import verify_model, embed_text, verify_embeddings
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -18,6 +18,8 @@ def main() -> None:
     embedding_parser = subparsers.add_parser("embed_text", help="Embed some text")
     embedding_parser.add_argument("text", type=str, help="Text to embed")
 
+    verify_embeddings_parser = subparsers.add_parser("verify_embeddings", help="Verifies the embeddings of the movies")
+
     args = parser.parse_args()
 
     match args.command:
@@ -26,6 +28,9 @@ def main() -> None:
 
         case "embed_text":
             embed_text(args.text)
+
+        case "verify_embeddings":
+            verify_embeddings()
 
         case _:
             parser.print_help()
