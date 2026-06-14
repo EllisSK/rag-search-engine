@@ -63,6 +63,22 @@ class SemanticSearch:
 
         return self.embeddings
 
+    def search(self, query: str, limit: int):
+        if not self.embeddings.any():
+            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+
+        query_embedding = self.generate_embedding(query)
+
+        similarities = []
+
+        for embedding, document in zip(self.embeddings, self.documents):
+            similarity = cosine_similarity(embedding, query_embedding)
+            similarities.append((similarity, document))
+
+        similarities = sorted(similarities, key=lambda x: x[0], reverse=True)
+
+        return similarities[:limit]
+
 def verify_model():
 
     ss = SemanticSearch()
@@ -102,3 +118,38 @@ def embed_query_text(query: str):
     print(f"Query: {query}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Shape: {embedding.shape}")
+
+def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
+
+def search(query: str, limit: int):
+    ss = SemanticSearch()
+
+    movies_dir = DATA_DIR / "movies.json"
+
+    with open(movies_dir, "r") as f:
+        movies = json.load(f)
+
+    documents = []
+    for movie in movies["movies"]:
+        documents.append(movie)
+
+    embeddings = ss.load_or_create_embeddings(documents)
+
+    results = ss.search(query, limit)
+
+    count = 1
+    for pair in results:
+        score = pair[0]
+        movie = pair[1]
+
+        print(f"{count}. {movie["title"]} (score: {score:.4f})\n{movie["description"][:100]}...\n")
+
+        count += 1
