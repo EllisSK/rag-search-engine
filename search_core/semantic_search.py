@@ -153,3 +153,30 @@ def search(query: str, limit: int):
         print(f"{count}. {movie["title"]} (score: {score:.4f})\n{movie["description"][:100]}...\n")
 
         count += 1
+
+def chunk(text:str, chunk_size: int):
+    split_text = text.split()
+
+    chunks = []
+
+    counter = 0
+    chunk = ""
+    for word in split_text:
+        if counter < chunk_size:
+            if counter == 0:
+                chunk += word
+                counter += 1
+            else:
+                chunk += f" {word}"
+                counter += 1
+        else:
+            chunks.append(chunk)
+            chunk = word
+            counter = 1
+    chunks.append(chunk)
+
+    print(f"Chunking {len(text)} characters")
+    print_count = 1
+    for chunk in chunks:
+        print(f"{print_count}. {chunk}")
+        print_count += 1
