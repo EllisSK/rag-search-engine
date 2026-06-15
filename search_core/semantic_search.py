@@ -154,29 +154,12 @@ def search(query: str, limit: int):
 
         count += 1
 
-def chunk(text:str, chunk_size: int):
-    split_text = text.split()
-
-    chunks = []
-
-    counter = 0
-    chunk = ""
-    for word in split_text:
-        if counter < chunk_size:
-            if counter == 0:
-                chunk += word
-                counter += 1
-            else:
-                chunk += f" {word}"
-                counter += 1
-        else:
-            chunks.append(chunk)
-            chunk = word
-            counter = 1
-    chunks.append(chunk)
+def chunk(text:str, chunk_size: int, overlap: int):
+    words = text.split()
+    step = chunk_size - overlap
+    
+    chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), step)]
 
     print(f"Chunking {len(text)} characters")
-    print_count = 1
-    for chunk in chunks:
-        print(f"{print_count}. {chunk}")
-        print_count += 1
+    for i, c in enumerate(chunks, 1):
+        print(f"{i}. {c}")
