@@ -1,4 +1,5 @@
 import json
+import re
 
 import numpy as np
 
@@ -163,3 +164,15 @@ def chunk(text:str, chunk_size: int, overlap: int):
     print(f"Chunking {len(text)} characters")
     for i, c in enumerate(chunks, 1):
         print(f"{i}. {c}")
+
+def semantic_chunk(text:str, chunk_size: int, overlap: int):
+    sentences = re.split(string=text, pattern=r"(?<=[.!?])\s+")
+    step = chunk_size - overlap
+
+    chunks = [" ".join(sentences[i:i + chunk_size]) for i in range(0, len(sentences), step)]
+
+    print(f"Semantically chunking {len(text)} characters")
+    for i, c in enumerate(chunks, 1):
+        print(f"{i}. {c}")
+
+    return chunks

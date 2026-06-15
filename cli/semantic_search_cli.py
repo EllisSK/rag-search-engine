@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import argparse
 
-from search_core.semantic_search import verify_model, embed_text, verify_embeddings, embed_query_text, search, chunk
+from search_core.semantic_search import verify_model, embed_text, verify_embeddings, embed_query_text, search, chunk, semantic_chunk
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -32,6 +32,11 @@ def main() -> None:
     chunk_parser.add_argument("--chunk-size", type=int, default=200, nargs='?')
     chunk_parser.add_argument("--overlap", type=int, default=0, nargs='?')
 
+    semantic_chunk_parser = subparsers.add_parser("semantic_chunk")
+    semantic_chunk_parser.add_argument("text", type=str, help="The text to chunk")
+    semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default=4, nargs='?')
+    semantic_chunk_parser.add_argument("--overlap", type=int, default=0, nargs='?')
+
     args = parser.parse_args()
 
     match args.command:
@@ -52,6 +57,9 @@ def main() -> None:
 
         case "chunk":
             chunk(args.text, args.chunk_size, args.overlap)
+
+        case "semantic_chunk":
+            semantic_chunk(args.text, args.max_chunk_size, args.overlap)
 
 
         case _:
