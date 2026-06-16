@@ -9,6 +9,7 @@ from tqdm import tqdm
 from search_core.tokenise import sanitise_text, get_stopwords, sanitise_term
 from search_core.constants import DATA_DIR, CACHE_DIR
 
+
 class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set[int]] = {}
@@ -37,7 +38,7 @@ class InvertedIndex:
 
     def get_documents(self, term: str) -> list[int]:
         term = term.lower()
-        
+
         if term in self.index.keys():
             doc_set = self.index[term]
             doc_list = list(doc_set)
@@ -67,7 +68,7 @@ class InvertedIndex:
 
         with open(index_cache_path, "wb") as f:
             pickle.dump(self.index, f)
-        
+
         with open(docmap_cache_path, "wb") as f:
             pickle.dump(self.docmap, f)
 
@@ -86,7 +87,7 @@ class InvertedIndex:
         try:
             with open(index_cache_path, "rb") as f:
                 self.index = pickle.load(f)
-            
+
             with open(docmap_cache_path, "rb") as f:
                 self.docmap = pickle.load(f)
 
@@ -127,7 +128,7 @@ class InvertedIndex:
         bm25_tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
 
         return bm25_tf
-    
+
     def __get_avg_doc_length(self) -> float:
         n = len(self.doc_lengths.keys())
         s = sum(self.doc_lengths.values())
@@ -136,7 +137,7 @@ class InvertedIndex:
             return s / n
         else:
             return 0.0
-        
+
     def bm25(self, doc_id: int, term: str, k1: float, b: float) -> float:
         idf = self.get_bm25_idf(term)
         tf = self.get_bm25_tf(doc_id, term, k1, b)
@@ -155,10 +156,10 @@ class InvertedIndex:
                 doc_total += bm25
             scores_dict[doc_id] = doc_total
 
-        sorted_results = sorted(scores_dict.items(), key=lambda item: item[1], reverse=True)
-        
+        sorted_results = sorted(
+            scores_dict.items(), key=lambda item: item[1], reverse=True
+        )
+
         limited_results = sorted_results[:limit]
 
         return limited_results
-
-

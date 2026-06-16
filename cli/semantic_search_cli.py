@@ -7,7 +7,16 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import argparse
 
-from search_core.semantic_search import verify_model, embed_text, verify_embeddings, embed_query_text, search, chunk, semantic_chunk
+from search_core.semantic_search import (
+    verify_model,
+    embed_text,
+    verify_embeddings,
+    embed_query_text,
+    search,
+    chunk,
+    semantic_chunk,
+)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -18,24 +27,30 @@ def main() -> None:
     embedding_parser = subparsers.add_parser("embed_text", help="Embed some text")
     embedding_parser.add_argument("text", type=str, help="Text to embed")
 
-    verify_embeddings_parser = subparsers.add_parser("verify_embeddings", help="Verifies the embeddings of the movies")
+    verify_embeddings_parser = subparsers.add_parser(
+        "verify_embeddings", help="Verifies the embeddings of the movies"
+    )
 
     embed_query_parser = subparsers.add_parser("embed_query", help="Embed a query")
     embed_query_parser.add_argument("query", type=str, help="The query to embed")
 
     search_parser = subparsers.add_parser("search", help="Search using a query")
     search_parser.add_argument("query", type=str, help="The query to search")
-    search_parser.add_argument("--limit", type=int, default=5, nargs='?')
+    search_parser.add_argument("--limit", type=int, default=5, nargs="?")
 
-    chunk_parser = subparsers.add_parser("chunk", help="Split long text into smaller chunks")
+    chunk_parser = subparsers.add_parser(
+        "chunk", help="Split long text into smaller chunks"
+    )
     chunk_parser.add_argument("text", type=str, help="The text to chunk")
-    chunk_parser.add_argument("--chunk-size", type=int, default=200, nargs='?')
-    chunk_parser.add_argument("--overlap", type=int, default=0, nargs='?')
+    chunk_parser.add_argument("--chunk-size", type=int, default=200, nargs="?")
+    chunk_parser.add_argument("--overlap", type=int, default=0, nargs="?")
 
     semantic_chunk_parser = subparsers.add_parser("semantic_chunk")
     semantic_chunk_parser.add_argument("text", type=str, help="The text to chunk")
-    semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default=4, nargs='?')
-    semantic_chunk_parser.add_argument("--overlap", type=int, default=0, nargs='?')
+    semantic_chunk_parser.add_argument(
+        "--max-chunk-size", type=int, default=4, nargs="?"
+    )
+    semantic_chunk_parser.add_argument("--overlap", type=int, default=0, nargs="?")
 
     args = parser.parse_args()
 
@@ -61,9 +76,9 @@ def main() -> None:
         case "semantic_chunk":
             semantic_chunk(args.text, args.max_chunk_size, args.overlap)
 
-
         case _:
             parser.print_help()
+
 
 if __name__ == "__main__":
     main()

@@ -6,9 +6,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from .constants import CACHE_DIR, DATA_DIR
 
+
 class SemanticSearch:
-    def __init__(self) -> None:
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+        self.model = SentenceTransformer(model_name)
         self.embeddings = None
         self.documents: list[dict] | None = None
         self.document_map: dict | None = None
@@ -16,11 +17,11 @@ class SemanticSearch:
     def generate_embedding(self, text: str):
         if not text.strip():
             raise ValueError("Bad text")
-        
+
         embedding = self.model.encode([text])
 
         return embedding[0]
-    
+
     def build_embeddings(self, documents: list[dict]):
         self.documents = documents
 
@@ -33,13 +34,13 @@ class SemanticSearch:
 
         self.embeddings = self.model.encode(str_reps, show_progress_bar=True)
 
-        embeddings_dir = CACHE_DIR / "movie_embeddings.npy" 
+        embeddings_dir = CACHE_DIR / "movie_embeddings.npy"
 
         with open(embeddings_dir, "wb") as f:
             np.save(f, self.embeddings)
-        
+
         return self.embeddings
-    
+
     def load_or_create_embeddings(self, documents: list[dict]):
         self.documents = documents
 
@@ -49,7 +50,7 @@ class SemanticSearch:
         for document in documents:
             self.document_map[document["id"]] = document
 
-        embeddings_dir = CACHE_DIR / "movie_embeddings.npy" 
+        embeddings_dir = CACHE_DIR / "movie_embeddings.npy"
 
         if embeddings_dir.is_file():
             with open(embeddings_dir, "rb") as f:
@@ -66,7 +67,9 @@ class SemanticSearch:
 
     def search(self, query: str, limit: int):
         if not self.embeddings.any():
-            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+            raise ValueError(
+                "No embeddings loaded. Call `load_or_create_embeddings` first."
+            )
 
         query_embedding = self.generate_embedding(query)
 
@@ -80,12 +83,14 @@ class SemanticSearch:
 
         return similarities[:limit]
 
+
 def verify_model():
 
     ss = SemanticSearch()
 
     print(f"Model loaded: {ss.model}")
     print(f"Max sequence length: {ss.model.max_seq_length}")
+
 
 def embed_text(text: str):
     ss = SemanticSearch()
@@ -94,6 +99,7 @@ def embed_text(text: str):
     print(f"Text: {text}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Dimensions: {embedding.shape[0]}")
+
 
 def verify_embeddings():
     ss = SemanticSearch()
@@ -110,15 +116,19 @@ def verify_embeddings():
     embeddings = ss.load_or_create_embeddings(documents)
 
     print(f"Number of docs:   {len(documents)}")
-    print(f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
+    print(
+        f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions"
+    )
+
 
 def embed_query_text(query: str):
     ss = SemanticSearch()
     embedding = ss.generate_embedding(query)
-    
+
     print(f"Query: {query}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Shape: {embedding.shape}")
+
 
 def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     dot_product = np.dot(vec1, vec2)
@@ -129,6 +139,7 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
         return 0.0
 
     return dot_product / (norm1 * norm2)
+
 
 def search(query: str, limit: int):
     ss = SemanticSearch()
@@ -151,25 +162,31 @@ def search(query: str, limit: int):
         score = pair[0]
         movie = pair[1]
 
-        print(f"{count}. {movie["title"]} (score: {score:.4f})\n{movie["description"][:100]}...\n")
+        print(
+            f"{count}. {movie['title']} (score: {score:.4f})\n{movie['description'][:100]}...\n"
+        )
 
         count += 1
 
-def chunk(text:str, chunk_size: int, overlap: int):
+
+def chunk(text: str, chunk_size: int, overlap: int):
     words = text.split()
     step = chunk_size - overlap
-    
-    chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), step)]
+
+    chunks = [" ".join(words[i : i + chunk_size]) for i in range(0, len(words), step)]
 
     print(f"Chunking {len(text)} characters")
     for i, c in enumerate(chunks, 1):
         print(f"{i}. {c}")
 
-def semantic_chunk(text:str, chunk_size: int, overlap: int):
+
+def semantic_chunk(text: str, chunk_size: int, overlap: int):
     sentences = re.split(string=text, pattern=r"(?<=[.!?])\s+")
     step = chunk_size - overlap
 
-    chunks = [" ".join(sentences[i:i + chunk_size]) for i in range(0, len(sentences), step)]
+    chunks = [
+        " ".join(sentences[i : i + chunk_size]) for i in range(0, len(sentences), step)
+    ]
 
     print(f"Semantically chunking {len(text)} characters")
     for i, c in enumerate(chunks, 1):
