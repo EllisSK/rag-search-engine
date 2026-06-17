@@ -1,3 +1,4 @@
+from triton.tools.compile import desc
 import json
 import re
 
@@ -82,6 +83,85 @@ class SemanticSearch:
         similarities = sorted(similarities, key=lambda x: x[0], reverse=True)
 
         return similarities[:limit]
+
+
+class ChunkedSemanticSearch(SemanticSearch):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+        super().__init__(model_name)
+        self.chunk_embeddings = None
+        self.chunk_metadata = None
+
+    def build_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+
+        self.document_map = {}
+
+        chunks: list[str] = []
+        metadata: list[dict] = []
+
+        movie_idx = 0
+
+        for document in documents:
+            self.document_map[document["id"]] = document
+
+            if document["description"] == "":
+                movie_idx += 1
+                continue
+
+            description_chunks = semantic_chunk(document["description"], 4, 1)
+            chunk_idx = 0
+            for c in description_chunks:
+                chunks.append(c)
+                metadata.append(
+                    {
+                        "movie_idx": movie_idx,
+                        "chunk_idx": chunk_idx,
+                        "total_chunks": len(description_chunks),
+                    }
+                )
+                chunk_idx += 1
+
+            movie_idx += 1
+
+        self.chunk_embeddings = self.model.encode(chunks)
+        self.chunk_metadata = metadata
+
+        embeddings_dir = CACHE_DIR / "chunk_embeddings.npy"
+        metadata_dir = CACHE_DIR / "chunk_metadata.json"
+
+        with open(embeddings_dir, "wb") as f:
+            np.save(f, self.chunk_embeddings)
+
+        with open(metadata_dir, "w") as f:
+            json.dump(
+                {"chunks": self.chunk_metadata, "total_chunks": len(chunks)},
+                f,
+                indent=2,
+            )
+
+        return self.chunk_embeddings
+
+    def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+
+        self.document_map = {}
+
+        for document in documents:
+            self.document_map[document["id"]] = document
+
+        embeddings_dir = CACHE_DIR / "chunk_embeddings.npy"
+        metadata_dir = CACHE_DIR / "chunk_metadata.json"
+
+        if embeddings_dir.exists() and metadata_dir.exists():
+            with open(embeddings_dir, "rb") as f:
+                self.chunk_embeddings = np.load(f)
+
+            with open(metadata_dir, "r") as f:
+                self.chunk_metadata = json.load(f)["chunks"]
+
+            return self.chunk_embeddings
+        else:
+            return self.build_chunk_embeddings(documents)
 
 
 def verify_model():
@@ -180,16 +260,37 @@ def chunk(text: str, chunk_size: int, overlap: int):
         print(f"{i}. {c}")
 
 
-def semantic_chunk(text: str, chunk_size: int, overlap: int):
+def semantic_chunk(text: str, chunk_size: int, overlap: int, verbose: bool = False):
     sentences = re.split(string=text, pattern=r"(?<=[.!?])\s+")
+    sentences = [s for s in sentences if s.strip()]
     step = chunk_size - overlap
 
-    chunks = [
-        " ".join(sentences[i : i + chunk_size]) for i in range(0, len(sentences), step)
-    ]
+    chunks = []
+    for i in range(0, len(sentences), step):
+        chunks.append(" ".join(sentences[i : i + chunk_size]))
+        if i + chunk_size >= len(sentences):
+            break
 
-    print(f"Semantically chunking {len(text)} characters")
-    for i, c in enumerate(chunks, 1):
-        print(f"{i}. {c}")
+    if verbose:
+        print(f"Semantically chunking {len(text)} characters")
+        for i, c in enumerate(chunks, 1):
+            print(f"{i}. {c}")
 
     return chunks
+
+
+def embed_chunks():
+    css = ChunkedSemanticSearch()
+
+    movies_dir = DATA_DIR / "movies.json"
+
+    with open(movies_dir, "r") as f:
+        movies = json.load(f)
+
+    documents = []
+    for movie in movies["movies"]:
+        documents.append(movie)
+
+    embeddings = css.load_or_create_chunk_embeddings(documents)
+
+    print(f"Generated {len(embeddings)} chunked embeddings")

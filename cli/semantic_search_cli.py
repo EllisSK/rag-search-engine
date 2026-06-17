@@ -15,6 +15,7 @@ from search_core.semantic_search import (
     search,
     chunk,
     semantic_chunk,
+    embed_chunks,
 )
 
 
@@ -52,6 +53,8 @@ def main() -> None:
     )
     semantic_chunk_parser.add_argument("--overlap", type=int, default=0, nargs="?")
 
+    embed_chunks_parser = subparsers.add_parser("embed_chunks")
+
     args = parser.parse_args()
 
     match args.command:
@@ -74,7 +77,10 @@ def main() -> None:
             chunk(args.text, args.chunk_size, args.overlap)
 
         case "semantic_chunk":
-            semantic_chunk(args.text, args.max_chunk_size, args.overlap)
+            semantic_chunk(args.text, args.max_chunk_size, args.overlap, True)
+
+        case "embed_chunks":
+            embed_chunks()
 
         case _:
             parser.print_help()
